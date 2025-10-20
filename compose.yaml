@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    ports:
+      - 8432:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: ${POSTGRES_DB}
+    command: ["postgres", "-c", "wal_level=logical"]
+    secrets:
+      - db_password
+    volumes:
+      - postgres_vol:/var/lib/postgresql/data/
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'",
+        ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - 6123:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@citizix.com
+      - PGADMIN_DEFAULT_PASSWORD_FILE=/run/secrets/pgadmin_pass
+    secrets:
+      - pgadmin_pass
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  redis:
+    image: redis:latest
+    ports:
+      - "8479:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+
+volumes:
+  postgres_vol:
+  pgadmin_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  pgadmin_pass:
+    file: ./secrets/pgadmin_pass

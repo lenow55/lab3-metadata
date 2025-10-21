@@ -94,9 +94,12 @@ services:
 
   airflow-worker:
     <<: *airflow-common
-    command:
-      - celery
-      - worker
+    # command:
+    #   - celery
+    #   - worker
+    command: >
+      bash -c "python -m debugpy --listen 0.0.0.0:5678 --wait-for-client \
+               celery worker"
     healthcheck:
       # yamllint disable rule:line-length
       test:

@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to Airflow Worker",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 7659
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/dags",
+          "remoteRoot": "/opt/airflow/dags"
+        }
+      ],
+      "justMyCode": false
+    }
+  ]
+}

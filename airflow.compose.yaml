@@ -40,7 +40,7 @@ x-airflow-common: &airflow-common
       condition: service_healthy
 
 services:
-  airflow-webserver:
+  airflow-apiserver:
     <<: *airflow-common
     command:
       - api-server

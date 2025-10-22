@@ -13,6 +13,10 @@
         {
           "localRoot": "${workspaceFolder}/dags",
           "remoteRoot": "/opt/airflow/dags"
+        },
+        {
+          "localRoot": "${workspaceFolder}/venv/lib",
+          "remoteRoot": "/home/airflow/.local/lib"
         }
       ],
       "justMyCode": false

@@ -94,12 +94,9 @@ services:
 
   airflow-worker:
     <<: *airflow-common
-    # command:
-    #   - celery
-    #   - worker
-    command: >
-      bash -c "python -m debugpy --listen 0.0.0.0:5678 --wait-for-client \
-               celery worker"
+    command:
+      - celery
+      - worker
     healthcheck:
       # yamllint disable rule:line-length
       test:
@@ -109,8 +106,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    ports:
-      - 7659:5678
     environment:
       <<: *airflow-common-env
       # Required to handle warm shutdown of the celery workers properly
@@ -120,6 +115,28 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  airflow-debug-worker:
+    <<: *airflow-common
+    build:
+      context: ./airflow_dockerfile
+      dockerfile: Dev.Dockerfile
+    profiles:
+      - debug
+    entrypoint: /debug_entrypoint
+    ports:
+      - 7659:5678
+    environment:
+      <<: *airflow-common-env
+      DUMB_INIT_SETSID: "0"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./config:/opt/airflow/config
+      - ./debug_entrypoint.sh:/debug_entrypoint
+    depends_on:
+      <<: *airflow-common-depends-on
 
   airflow-triggerer:
     <<: *airflow-common

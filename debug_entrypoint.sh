@@ -1,4 +1,6 @@
-echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${AIRFLOW_USER_HOME_DIR}:/sbin/nologin" >> /etc/passwd
+#!/usr/bin/env bash
+
+echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${AIRFLOW_USER_HOME_DIR}:/sbin/nologin" >>/etc/passwd
 export HOME=${AIRFLOW_USER_HOME_DIR}
 export DB_HOST=redis
 export DB_PORT=6379

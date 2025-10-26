@@ -3,7 +3,7 @@ from datetime import datetime
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
-class TransferDateManager:
+class TransferDateTimeManager:
     def __init__(
         self,
         table_name: str,
@@ -21,7 +21,10 @@ class TransferDateManager:
             WHERE table_name = %s
         """
         result = self.hook.get_first(sql, parameters=(self.init_date, self.table_name))
-        return result[0].strftime("%Y-%m-%d")
+        max_date = result[0]
+        if not isinstance(max_date, datetime):
+            raise RuntimeError("Bad datetime")
+        return max_date.isoformat()
 
     def update_max_date(self, date_value: str, updated_at=datetime.now()):
         sql = """

@@ -16,7 +16,7 @@ class TransferDateManager:
     def get_max_date(self) -> str:
         sql = """
             SELECT COALESCE(MAX(max_date), %s)
-            FROM s3_max_dates
+            FROM transfer_max_dates
             WHERE table_name = %s
         """
         result = self.hook.get_first(sql, parameters=(self.init_date, self.table_name))
@@ -24,7 +24,7 @@ class TransferDateManager:
 
     def update_max_date(self, date_value: str, updated_at=datetime.now()):
         sql = """
-            INSERT INTO s3_max_dates (table_name, max_date, updated_at)
+            INSERT INTO transfer_max_dates (table_name, max_date, updated_at)
             VALUES (%s, %s, %s)
             ON CONFLICT (table_name) DO UPDATE
             SET max_date = EXCLUDED.max_date,

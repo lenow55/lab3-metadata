@@ -1,5 +1,6 @@
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 from datetime import datetime
+
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
 class TransferDateManager:

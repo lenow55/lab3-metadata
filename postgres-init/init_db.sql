@@ -30,12 +30,12 @@ CREATE DATABASE metadata;
 
 CREATE TABLE public.transfer_max_dates (
     table_name TEXT PRIMARY KEY,
-    max_date DATE,
+    max_date TIMESTAMP,
     updated_at TIMESTAMP,
 );
 
 CREATE TABLE public.transfer_metadata (
     id SERIAL PRIMARY KEY,
-    source_name TEXT,
-    target_name TEXT,
+    source_name VARCHAR(50) NOT NULL,
+    target_name VARCHAR(50) NOT NULL,
 );

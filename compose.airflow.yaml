@@ -129,6 +129,7 @@ services:
     environment:
       <<: *airflow-common-env
       DUMB_INIT_SETSID: "0"
+      AIRFLOW__CELERY__WORKER_CONCURRENCY: "1"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs

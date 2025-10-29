@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from sqlalchemy import (
     Column,
     DateTime,
@@ -55,3 +56,9 @@ metadata_table = Table(
     Column("source_name", String(length=50)),
     Column("target_name", String(length=50)),
 )
+
+
+class Target2Src(BaseModel):
+    id: int
+    source_name: str
+    target_name: str

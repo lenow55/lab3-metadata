@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.source (
             column3 VARCHAR(50),
             i_column4 INTEGER,
             column5 VARCHAR(50),
-            i_column6 INTEGER,
+            i_column6 INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS public.target (
@@ -21,21 +21,21 @@ CREATE TABLE IF NOT EXISTS public.target (
             column9 VARCHAR(50),
             i_column10 INTEGER,
             column11 VARCHAR(50),
-            i_column12 INTEGER,
+            i_column12 INTEGER
 );
 
 CREATE DATABASE metadata;
 
 \connect metadata;
 
-CREATE TABLE public.transfer_max_dates (
+CREATE TABLE IF NOT EXISTS public.transfer_max_dates (
     table_name TEXT PRIMARY KEY,
     max_date TIMESTAMP,
-    updated_at TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
-CREATE TABLE public.transfer_metadata (
+CREATE TABLE IF NOT EXISTS public.transfer_metadata (
     id SERIAL PRIMARY KEY,
     source_name VARCHAR(50) NOT NULL,
-    target_name VARCHAR(50) NOT NULL,
+    target_name VARCHAR(50) NOT NULL
 );

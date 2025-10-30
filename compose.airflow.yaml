@@ -27,6 +27,7 @@ x-airflow-common: &airflow-common
 
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: "/opt/airflow/config/airflow.cfg"
+    PYTHONPATH: /opt/airflow/
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs

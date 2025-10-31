@@ -24,7 +24,7 @@ class TransferDateTimeManager:
         max_date = result[0]
         if not isinstance(max_date, datetime):
             raise RuntimeError("Bad datetime")
-        return max_date.isoformat()
+        return max_date.isoformat(sep=" ")
 
     def update_max_date(self, date_value: str, updated_at=datetime.now()):
         sql = """

@@ -58,7 +58,7 @@ def get_last_update():
     )
     manager = TransferDateTimeManager(transfer_table, init_date=init_date)
     starttime = manager.get_max_date()
-    endtime = datetime.now().strftime("%Y-%m-%d")
+    endtime = datetime.now().isoformat(sep=" ")
     return {"starttime": starttime, "endtime": endtime}
 
 

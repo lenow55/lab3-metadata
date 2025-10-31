@@ -8,7 +8,7 @@ class TransferDateTimeManager:
         self,
         table_name: str,
         init_date: str,
-        postgres_conn_id: str = "metadata_db",
+        postgres_conn_id: str = "metadata_conn_id",
     ):
         self.table_name = table_name
         self.init_date = init_date

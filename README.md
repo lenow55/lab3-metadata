@@ -1,5 +1,11 @@
 # Airflow Metadata lab
 
+Так стартует весь проект:
+
+```bash
+docker compose up -d
+```
+
 так можно дебагинг стартануть
 
 ```bash

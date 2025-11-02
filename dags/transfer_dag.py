@@ -11,9 +11,9 @@ from airflow.sdk import (
 )
 from airflow.sdk.definitions.xcom_arg import PlainXComArg
 from pydantic import BaseModel, TypeAdapter, ValidationError
-from sqlalchemy import select
+from sqlalchemy import and_, insert, select
 
-from dags.schemas import Target2Src, metadata_table, source
+from dags.schemas import Target2Src, metadata_table, source, target
 from plugins.transfer_manager import TransferDateTimeManager
 
 logger = logging.getLogger(__name__)
@@ -102,31 +102,54 @@ def transfer_data(starttime: Any, endtime: Any, src2target_list: Any):
     logger.info(starttime)
     ta = TypeAdapter(list[Target2Src])
     src2target = ta.validate_python(src2target_list)
-    # hook = PostgresHook(postgres_conn_id="backend_conn_id")
-    # engine = hook.get_sqlalchemy_engine()
-    #
-    # try:
-    #     source_cols = [getattr(source, maping.source_name) for maping in src2target]
-    # finally:
-    #     pass
-    #
-    # with engine.begin() as con:
-    #     try:
-    #         result = con.execute(metadata_table.select())
-    #         mapings_rows = result.mappings().all()
-    #
-    #     except ValidationError as e:
-    #         logger.error(e)
-    #         raise e
-    #     except Exception as e:
-    #         logger.error(e)
-    #         raise e
-    #
-    # pass
+    init_date = Variable.get(key="init_date", default="1970-01-01 00:00:00")
+    transfer_table = Variable.get(
+        key="metadata_transfer_table", default="transfer_max_dates"
+    )
+    hook = PostgresHook(postgres_conn_id="backend_conn_id")
+    engine = hook.get_sqlalchemy_engine()
+
+    # Сформировали колонки для переноса
+    try:
+        source_cols_with_map = []
+        target_cols: list[str] = []
+        for maping in src2target:
+            col_instance = getattr(source.c, maping.source_name)
+            source_cols_with_map.append(col_instance.label(maping.target_name))
+            _ = getattr(target.c, maping.target_name)
+            target_cols.append(maping.target_name)
+    except Exception as e:
+        logger.error("Error at map cols")
+        logger.error(e)
+        logger.debug("Source cols")
+        logger.debug(source.columns)
+        logger.debug("Target cols")
+        logger.debug(target.columns)
+        raise e
+
+    # формируем запросы на выполнение
+    stmt_select = select(*source_cols_with_map).where(
+        and_(source.c.ts >= starttime, source.c.ts < endtime)
+    )
+    stmt_insert = insert(target).from_select(target_cols, stmt_select)
+    # выполняем перенос сразу по месту без загрузки данных в программу
+    manager = TransferDateTimeManager(transfer_table, init_date=init_date)
+    with engine.begin() as con:
+        try:
+            result = con.execute(stmt_insert)
+            logger.info(f"Insert in target table {result.rowcount} rows")
+
+            # записываем сразу метаданные в этой транзакции
+            manager.update_max_date(date_value=endtime)
+            logger.info(f"Max date in meta table updated to {endtime}")
+
+        except Exception as e:
+            logger.error(e)
+            raise e
 
 
 @dag(
-    dag_id="debug_psql",
+    dag_id="lab3-dag",
     schedule=None,
     start_date=datetime(2025, 1, 1, tzinfo=UTC),
     catchup=False,

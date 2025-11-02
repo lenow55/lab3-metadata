@@ -155,7 +155,7 @@ def debug_psql_dag():
         endtime=max_src_time,
         src2target_list=src2target,
     )
-    transfer_res.set_upstream([src2target, work_dates])
+    transfer_res.set_upstream([src2target, work_dates, max_src_time])
 
 
 debug_psql = debug_psql_dag()

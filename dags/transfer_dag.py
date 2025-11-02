@@ -4,11 +4,16 @@ from typing import Any
 
 from airflow.exceptions import AirflowNotFoundException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.sdk import Variable, dag, task  # pyright: ignore[reportUnknownVariableType]
+from airflow.sdk import (
+    Variable,
+    dag,  # pyright: ignore[reportUnknownVariableType]
+    task,
+)
 from airflow.sdk.definitions.xcom_arg import PlainXComArg
-from pydantic import TypeAdapter, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
+from sqlalchemy import select
 
-from dags.schemas import Target2Src, metadata_table
+from dags.schemas import Target2Src, metadata_table, source
 from plugins.transfer_manager import TransferDateTimeManager
 
 logger = logging.getLogger(__name__)
@@ -50,8 +55,35 @@ def get_last_update():
     )
     manager = TransferDateTimeManager(transfer_table, init_date=init_date)
     starttime = manager.get_max_date()
-    endtime = datetime.now().isoformat(sep=" ")
-    return {"starttime": starttime, "endtime": endtime}
+    return {"starttime": starttime}
+
+
+@task(task_id="get_latest_row_in_src")
+def get_latest_row_time() -> str:
+    logger.info("Start task get_latest_row_time")
+    hook = PostgresHook(postgres_conn_id="backend_conn_id")
+    engine = hook.get_sqlalchemy_engine()
+
+    class TsDict(BaseModel):
+        ts: datetime
+
+    with engine.begin() as con:
+        try:
+            result = con.execute(select(source.c.ts).order_by(source.c.ts.desc()))
+            mapings_rows = result.mappings().first()
+            if not mapings_rows:
+                raise AirflowNotFoundException("Empty source table")
+            logger.info(mapings_rows)
+            max_row_time = TsDict.model_validate(mapings_rows)
+
+        except ValidationError as e:
+            logger.error(e)
+            raise e
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+    return max_row_time.ts.isoformat(sep=" ")
 
 
 # TODO: следующий шаг - функция, которая будет переносить
@@ -68,9 +100,29 @@ def get_last_update():
 @task(task_id="transfer_data")
 def transfer_data(starttime: Any, endtime: Any, src2target_list: Any):
     logger.info(starttime)
-    logger.info(endtime)
-    logger.info(src2target_list)
-    pass
+    ta = TypeAdapter(list[Target2Src])
+    src2target = ta.validate_python(src2target_list)
+    # hook = PostgresHook(postgres_conn_id="backend_conn_id")
+    # engine = hook.get_sqlalchemy_engine()
+    #
+    # try:
+    #     source_cols = [getattr(source, maping.source_name) for maping in src2target]
+    # finally:
+    #     pass
+    #
+    # with engine.begin() as con:
+    #     try:
+    #         result = con.execute(metadata_table.select())
+    #         mapings_rows = result.mappings().all()
+    #
+    #     except ValidationError as e:
+    #         logger.error(e)
+    #         raise e
+    #     except Exception as e:
+    #         logger.error(e)
+    #         raise e
+    #
+    # pass
 
 
 @dag(
@@ -83,11 +135,12 @@ def transfer_data(starttime: Any, endtime: Any, src2target_list: Any):
 def debug_psql_dag():
     src2target = load_transfer_maping()
     work_dates = get_last_update()
+    max_src_time = get_latest_row_time()
     if not isinstance(work_dates, PlainXComArg):
         raise RuntimeError("Bad arg type")
     transfer_res = transfer_data(
         starttime=work_dates["starttime"],
-        endtime=work_dates["endtime"],
+        endtime=max_src_time,
         src2target_list=src2target,
     )
     transfer_res.set_upstream([src2target, work_dates])
